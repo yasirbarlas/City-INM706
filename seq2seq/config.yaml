@@ -1,0 +1,8 @@
+model:
+  embedding_dim: 256
+  hidden_dim: 128
+  max_seq_length: 10
+train:
+    epochs: 10
+    batch_size: 1
+    one_optimizer: True
