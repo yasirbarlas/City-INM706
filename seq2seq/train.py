@@ -1,4 +1,5 @@
 import time
+import os
 import torch
 import wandb
 import torch.nn as nn
@@ -6,11 +7,16 @@ from torch import optim
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
+import numpy as np
+import random
+
 from dataset import TranslationDataset
 from logger import Logger
 from models import EncoderRNN, DecoderRNN
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
+
+from utils import parse_arguments, read_settings
 
 device = torch.device("cpu")
 if torch.cuda.is_available():
@@ -34,49 +40,7 @@ def evaluate(encoder, decoder, input_tensor, output_lang):
             decoded_words.append(output_lang.index2word[idx.item()])
     return decoded_words, decoder_attn
 
-
-def plot_attention(input_sentence, output_words, attentions):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(attentions.cpu().numpy(), cmap="bone")
-    fig.colorbar(cax)
-
-    # Set up axes
-    ax.set_xticklabels([""] + input_sentence.split(" ") +
-                       ["<EOS>"], rotation=90)
-    ax.set_yticklabels([""] + output_words)
-
-    # Show label at every tick
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
-
-    # Save the figure to a wandb artifact
-    wandb.log({"attention_matrix": wandb.Image(fig)})
-
-    # Close the figure to prevent it from being displayed in the notebook
-    plt.close(fig)
-
-def plot_attention_self(attentions):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(attentions.clone().detach().cpu().numpy(), cmap="bone")
-    fig.colorbar(cax)
-
-    # Save the figure to a wandb artifact
-    wandb.log({"attention_matrix": wandb.Image(fig)})
-
-    # Close the figure to prevent it from being displayed in the notebook
-    plt.close(fig)
-
-
-def plot_and_show_attention(encoder, decoder, input_sentence, input_tensor, output_lang_voc):
-    output_words, attentions = evaluate(encoder, decoder, input_tensor, output_lang_voc)
-    plot_attention(input_sentence, output_words, attentions[0, :len(output_words), :])
-
-
-def train_epoch(dataloader, encoder, decoder, encoder_optimizer,
-          decoder_optimizer, criterion, output_lang, self_att=None, plot_attention=False):
-
+def train_epoch(dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, output_lang):
     total_loss = 0
     for data in dataloader:
         input_sentence, input_tensor, target_tensor = data
@@ -85,8 +49,6 @@ def train_epoch(dataloader, encoder, decoder, encoder_optimizer,
         decoder_optimizer.zero_grad()
 
         encoder_outputs, encoder_hidden = encoder(input_tensor)
-        if self_att is not None:
-            encoder_outputs, att = self_att(encoder_outputs)
         decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
 
         loss = criterion(
@@ -99,18 +61,11 @@ def train_epoch(dataloader, encoder, decoder, encoder_optimizer,
         decoder_optimizer.step()
 
         total_loss += loss.item()
-    if plot_attention:
-        plot_and_show_attention(encoder, decoder, input_sentence[0], input_tensor[0,:].unsqueeze(0), output_lang)
-    if self_att is not None:
-        plot_attention_self(att[0,:,:])
-
 
     return total_loss / len(dataloader)
 
 
-def train(
-        train_dataloader, encoder, decoder, n_epochs, logger, output_lang, learning_rate = 0.001,
-        print_every = 100, plot_every = 100, plot_attention = False):
+def train(train_dataloader, encoder, decoder, n_epochs, logger, output_lang, learning_rate = 0.001, print_every = 100, plot_every = 100):
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
@@ -120,7 +75,7 @@ def train(
     criterion = nn.NLLLoss()
 
     for epoch in range(1, n_epochs + 1):
-        loss = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,output_lang, plot_attention=plot_attention)
+        loss = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,output_lang)
         print_loss_total += loss
         plot_loss_total += loss
 
@@ -135,21 +90,68 @@ def train(
             plot_losses.append(plot_loss_avg)
             plot_loss_total = 0
 
+        if (epoch % 5 == 0) or (epoch == n_epochs):
+            # Create checkpoint folder
+            if not os.path.exists("checkpoints"):
+                os.makedirs("checkpoints")
+
+            # Save the model checkpoint
+            checkpoint_name = f"checkpoint_epoch_{epoch}.pt"
+            checkpoint_path = os.path.join("checkpoints", checkpoint_name)
+            torch.save({
+                'encoder_state_dict': encoder.state_dict(),
+                'decoder_state_dict': decoder.state_dict(),
+                'encoder_optimizer_state_dict': encoder_optimizer.state_dict(),
+                'decoder_optimizer_state_dict': decoder_optimizer.state_dict(),
+                'epoch': epoch,
+                'loss': loss
+            }, checkpoint_path)
+
 
 def main():
+    # Set random seed for reproducibility
+    randomer = 50
+    torch.manual_seed(randomer)
+    random.seed(randomer)
+    np.random.seed(randomer)
+
+    generator = torch.Generator().manual_seed(randomer)
+
+    args = parse_arguments()
+
+    # Read settings from the YAML file
+    settings = read_settings(args.config)
+
+    # Access and use the settings as needed
+    model_settings = settings.get('model', {})
+    train_settings = settings.get('train', {})
+    print(model_settings)
+    print(train_settings)
+
+    # Initialise 'wandb' for logging
     wandb_logger = Logger(f"inm706_translation_seq2seq_v1", project = "inm706_cwkk")
     logger = wandb_logger.get_logger()
-    dataset = TranslationDataset("en", "fr", True)
-    hidden_size = 128
-    batch_size = 64
-    n_epochs = 50
+    
+    # Get dataset
+    dataset = TranslationDataset(lang1 = "en", lang2 = "fr", max_seq_len = model_settings["max_seq_length"], reverse = True)
 
-    train_dataloader = DataLoader(dataset, batch_size = batch_size)
+    # Define the sizes for training and validation sets
+    train_size = int(0.75 * len(dataset))
+    val_size = len(dataset) - train_size
 
-    encoder = EncoderRNN(dataset.input_lang.n_words, hidden_size).to(device)
-    decoder = DecoderRNN(hidden_size, dataset.output_lang.n_words).to(device)
+     # Use 'random_split' to split the dataset into training and validation sets
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size], generator = generator)
 
-    train(train_dataloader, encoder, decoder, n_epochs, logger, dataset.output_lang, print_every = 5, plot_every = 5, plot_attention = False)
+    # Create data loaders for each set
+    train_dataloader = DataLoader(train_dataset, batch_size = train_settings["batch_size"])
+    val_dataloader = DataLoader(val_dataset, batch_size = train_settings["batch_size"])
+
+    # Define encoder and decoder
+    encoder = EncoderRNN(dataset.input_lang.n_words, model_settings["hidden_dim"]).to(device)
+    decoder = DecoderRNN(model_settings["hidden_dim"], dataset.output_lang.n_words, max_seq_len = model_settings["max_seq_length"]).to(device)
+
+    # Run training loop
+    train(train_dataloader, encoder, decoder, train_settings["epochs"], logger, dataset.output_lang, print_every = 1, plot_every = 1)
 
     return
 
