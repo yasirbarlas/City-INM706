@@ -11,7 +11,6 @@ device = torch.device("cpu")
 if torch.cuda.is_available():
     device = torch.device("cuda")
 
-
 class Lang:
     def __init__(self, name):
         self.name = name
@@ -51,6 +50,7 @@ class TranslationDataset(Dataset):
         pairs = []
         with open("../%s-%s.csv" % (self.lang1, self.lang2), newline="", encoding="utf-8") as csvfile:
             reader = csv.reader(csvfile)
+            next(reader)
             for row in reader:
                 pairs.append([self.normalize_string(row[0]), self.normalize_string(row[1])])
 
