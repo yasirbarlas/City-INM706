@@ -48,11 +48,12 @@ class TranslationDataset(Dataset):
 
     def load_data(self, reverse = False):
         pairs = []
-        with open("../%s-%s.csv" % (self.lang1, self.lang2), newline="", encoding="utf-8") as csvfile:
-            reader = csv.reader(csvfile)
-            next(reader)
-            for row in reader:
-                pairs.append([self.normalize_string(row[0]), self.normalize_string(row[1])])
+        with open("../fr-en/europarl-v7.fr-en.%s" % self.lang1, mode = "r", encoding = "utf-8") as en_file, open(
+                "../fr-en/europarl-v7.fr-en.%s" % self.lang2, mode = "r", encoding = "utf-8") as fr_file:
+            en_lines = en_file.readlines()
+            fr_lines = fr_file.readlines()
+            for en_line, fr_line in zip(en_lines, fr_lines):
+                pairs.append([self.normalize_string(en_line), self.normalize_string(fr_line)])
 
         # Reverse pairs, make Lang instances
         if reverse:

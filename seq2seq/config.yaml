@@ -1,6 +1,10 @@
 model:
+  attention: "bahdanau" # "bahdanau", "luong", "none"
   hidden_dim: 128
-  max_seq_length: 2
+  max_seq_length: 4
 train:
-    epochs: 100
-    batch_size: 32
+    epochs: 5
+    batch_size: 64
+    optimizer: "adam" # "radam", "adam"
+    loss_function: "negative-log" # "cross-entropy", "negative-log"
+    learning_rate: 0.001
