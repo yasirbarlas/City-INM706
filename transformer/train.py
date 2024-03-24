@@ -97,7 +97,6 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
         logger.log({"train_bleu": train_bleu, "val_bleu": val_bleu})
         logger.log({"train_nist": train_nist, "val_nist": val_nist})
         print(f"Epoch: {epoch} / {n_epochs}, Train Loss {train_loss}, Validation Loss {val_loss}, Train BLEU {train_bleu}, Validation BLEU {val_bleu}, Train NIST {train_nist}, Validation NIST {val_nist}")
-        #print(f'Epoch [{epoch + 1}/{n_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
 
         if (val_loss + 0.001) < val_losses[epoch - 1]:
             # Restart patience (improvement in validation loss)
