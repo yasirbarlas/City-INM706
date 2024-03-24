@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 import wandb
 import torch.nn as nn
@@ -93,12 +94,18 @@ def train(train_dataloader, val_dataloader, encoder, decoder, n_epochs, logger, 
     val_losses = [float("inf")]
     counter = 0
 
+    # Adam
     if optimizer == "adam":
         encoder_optimizer = optim.Adam(encoder.parameters(), lr = learning_rate)
         decoder_optimizer = optim.Adam(decoder.parameters(), lr = learning_rate)
+    # RAdam
     elif optimizer == "radam":
         encoder_optimizer = optim.RAdam(encoder.parameters(), lr = learning_rate)
         decoder_optimizer = optim.RAdam(decoder.parameters(), lr = learning_rate)
+    # SGD Nesterov
+    elif optimizer == "sgd":
+        encoder_optimizer = optim.SGD(encoder.parameters(), lr = learning_rate, nesterov = True, momentum = 0.9)
+        decoder_optimizer = optim.SGD(decoder.parameters(), lr = learning_rate, nesterov = True, momentum = 0.9)
     
     if criterion == "negative-log":
         criterion = nn.NLLLoss()
@@ -121,7 +128,7 @@ def train(train_dataloader, val_dataloader, encoder, decoder, n_epochs, logger, 
         logger.log({"train_nist": train_nist})
         logger.log({"validation_nist": val_nist})
 
-        if (val_loss + 0.01) < val_losses[epoch - 1]:
+        if (val_loss + 0.001) < val_losses[epoch - 1]:
             # Restart patience (improvement in validation loss)
             counter = 0
 
@@ -148,9 +155,34 @@ def train(train_dataloader, val_dataloader, encoder, decoder, n_epochs, logger, 
                 "output_lang": output_lang
             }, checkpoint_path)
         
-        elif (val_loss + 0.01) > val_losses[epoch - 1]:
+        elif (val_loss + 0.001) > val_losses[epoch - 1]:
             # Add one to patience
             counter += 1
+
+            if val_loss < val_losses[epoch - 1]:
+                # Create checkpoint folder
+                if not os.path.exists("checkpoints"):
+                    os.makedirs("checkpoints")
+
+                # Save the model checkpoint
+                checkpoint_name = f"checkpoint_latest.pth"
+                checkpoint_path = os.path.join("checkpoints", checkpoint_name)
+                torch.save({
+                    "encoder_state_dict": encoder.state_dict(),
+                    "decoder_state_dict": decoder.state_dict(),
+                    "encoder_optimizer_state_dict": encoder_optimizer.state_dict(),
+                    "decoder_optimizer_state_dict": decoder_optimizer.state_dict(),
+                    "epoch": epoch,
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "train_bleu": train_bleu,
+                    "val_bleu": val_bleu,
+                    "train_nist": train_nist,
+                    "val_nist": val_nist,
+                    "input_lang": input_lang,
+                    "output_lang": output_lang
+                }, checkpoint_path)
+
             # Patience reached, stop training (no significant improvement in validation loss after 5 epochs)
             if counter >= 5:
                 break
@@ -174,6 +206,9 @@ def evaluate(encoder, decoder, input_tensor, output_lang):
     return decoded_words, decoder_attn
 
 def plot_attention(input_sentence, output_words, attentions):
+    timestamp = int(time.time())
+    filename = f"attention_{timestamp}.pdf"
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     cax = ax.matshow(attentions.cpu().numpy(), cmap = "bone")
@@ -189,6 +224,9 @@ def plot_attention(input_sentence, output_words, attentions):
 
     # Save the figure to a wandb artifact
     wandb.log({"attention_matrix": wandb.Image(fig)})
+
+    # Save the figure to computer
+    plt.savefig(filename, bbox_inches = "tight")
 
     # Close the figure to prevent it from being displayed in the notebook
     plt.close(fig)
@@ -217,8 +255,8 @@ def main():
     print(model_settings)
     print(train_settings)
 
-    # Initialise "wandb" for logging
-    wandb_logger = Logger(f"inm706_translation_seq2seq_v1", project = "inm706_cwk")
+    # Initialise 'wandb' for logging
+    wandb_logger = Logger(f"inm706_seq2seq_bidir_encoder_1_layer", project = "inm706_cwk")
     logger = wandb_logger.get_logger()
     
     # Get dataset
@@ -236,7 +274,7 @@ def main():
     val_dataloader = DataLoader(val_dataset, batch_size = train_settings["batch_size"])
 
     # Define encoder and decoder
-    encoder = EncoderRNN(dataset.input_lang.n_words, model_settings["hidden_dim"]).to(device)
+    encoder = EncoderRNN(dataset.input_lang.n_words, model_settings["hidden_dim"], bidirectional = model_settings["encoder_bidirect"], num_layers = model_settings["num_layers"], layer_norm = model_settings["layer_norm"]).to(device)
     
     # Get decoder (with or without attention) and train model
     if model_settings["attention"] != "none":

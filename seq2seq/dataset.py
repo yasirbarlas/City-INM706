@@ -37,7 +37,7 @@ class TranslationDataset(Dataset):
     SOS_token = 0
     EOS_token = 1
 
-    def __init__(self, lang1 = "en", lang2 = "fr", max_seq_len = 10, reverse = False):
+    def __init__(self, lang1 = "en", lang2 = "fr", max_seq_len = 50, reverse = False):
         self.lang1 = lang1
         self.lang2 = lang2
         self.max_seq_len = max_seq_len
