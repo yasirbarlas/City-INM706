@@ -2,10 +2,8 @@ import torch
 import yaml
 import argparse
 
-from nltk.translate.bleu_score import sentence_bleu
-from nltk.translate.meteor_score import meteor_score
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from nltk.translate.nist_score import sentence_nist
-from nltk.translate.bleu_score import SmoothingFunction
 
 device = torch.device("cpu")
 if torch.cuda.is_available():
@@ -27,9 +25,16 @@ def calculate_bleu(decoder_outputs, target_tensor):
         predicted_indices = decoder_outputs[i].argmax(dim = -1).tolist()
         target_indices = target_tensor[i].tolist()
 
-        # Remove padding and SOS token from target tensor
+        # Remove EOS token from target tensor
         if 1 in target_indices:
             target_indices = target_indices[:target_indices.index(1)]
+
+        # Remove EOS token from predicted tensor
+        if 1 in predicted_indices:
+            predicted_indices = predicted_indices[:predicted_indices.index(1)]
+
+        if len(predicted_indices) == 0:
+            predicted_indices.append("model predicted all EOS, this text and calculation is meaningless")
 
         # Calculate BLEU score for each sequence
         bleu_score = sentence_bleu([target_indices], predicted_indices, smoothing_function = SmoothingFunction().method1)
@@ -45,12 +50,19 @@ def calculate_nist(decoder_outputs, target_tensor, n = 4):
         predicted_indices = decoder_outputs[i].argmax(dim = -1).tolist()
         target_indices = target_tensor[i].tolist()
 
-        # Remove padding and SOS token from target tensor
+        # Remove EOS token from target tensor
         if 1 in target_indices:
             target_indices = target_indices[:target_indices.index(1)]
 
+        # Remove EOS token from predicted tensor
+        if 1 in predicted_indices:
+            predicted_indices = predicted_indices[:predicted_indices.index(1)]
+
+        if len(predicted_indices) == 0:
+            predicted_indices.append("model predicted all EOS, this text and calculation is meaningless")
+
         # Calculate NIST score for each sequence
-        nist_score = sentence_nist([target_indices], predicted_indices, n)
+        nist_score = sentence_nist([target_indices], predicted_indices, min(n, len(predicted_indices)))
         nist_scores.append(nist_score)
 
     # Average NIST scores across all sequences
