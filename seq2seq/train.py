@@ -25,6 +25,9 @@ if torch.cuda.is_available():
 print(device)
 
 def train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, output_lang, plot_attention = False):
+    encoder.train()
+    decoder.train()
+    
     total_loss = 0
     total_bleu_score = 0
     total_nist_score = 0
@@ -63,30 +66,34 @@ def train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_o
     return total_loss / len(train_dataloader), total_bleu_score / len(train_dataloader), total_nist_score / len(train_dataloader)
 
 def validate(val_dataloader, encoder, decoder, criterion, output_lang):
+    encoder.eval()
+    decoder.eval()
+
     total_loss = 0
     total_bleu_score = 0
     total_nist_score = 0
     
-    for data in val_dataloader:
-        input_sentence, input_tensor, target_tensor = data
+    with torch.no_grad():
+        for data in val_dataloader:
+            input_sentence, input_tensor, target_tensor = data
 
-        encoder_outputs, encoder_hidden = encoder(input_tensor)
-        decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
+            encoder_outputs, encoder_hidden = encoder(input_tensor)
+            decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
 
-        loss = criterion(
-            decoder_outputs.view(-1, decoder_outputs.size(-1)),
-            target_tensor.view(-1)
-        )
+            loss = criterion(
+                decoder_outputs.view(-1, decoder_outputs.size(-1)),
+                target_tensor.view(-1)
+            )
 
-        total_loss += loss.item()
+            total_loss += loss.item()
 
-        # Calculate BLEU score
-        bleu_score = calculate_bleu(decoder_outputs, target_tensor)
-        total_bleu_score += bleu_score
+            # Calculate BLEU score
+            bleu_score = calculate_bleu(decoder_outputs, target_tensor)
+            total_bleu_score += bleu_score
 
-        # Calculate NIST score
-        nist_score = calculate_nist(decoder_outputs, target_tensor)
-        total_nist_score += nist_score
+            # Calculate NIST score
+            nist_score = calculate_nist(decoder_outputs, target_tensor)
+            total_nist_score += nist_score
 
     return total_loss / len(val_dataloader), total_bleu_score / len(val_dataloader), total_nist_score / len(val_dataloader)
 
