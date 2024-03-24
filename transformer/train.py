@@ -189,27 +189,23 @@ def main():
     train_dataloader = DataLoader(train_dataset, batch_size=train_settings["batch_size"])
     val_dataloader = DataLoader(val_dataset, batch_size=train_settings["batch_size"])
 
-    # Create the Transformer model with encoder and decoder
+    # Create the Transformer model
     src_vocab_size = dataset.input_lang.n_words
     target_vocab_size = dataset.output_lang.n_words
-    seq_length = dataset.max_seq_len
-    hidden_size = model_settings["hidden_size"]
 
-    model = Transformer(embed_dim=hidden_size, src_vocab_size=src_vocab_size,
-                        target_vocab_size=target_vocab_size, seq_length=seq_length,
-                        num_layers=model_settings["num_layers"], expansion_factor=model_settings["expansion_factor"],
-                        n_heads=model_settings["n_heads"]).to(device)
+    model = Transformer(embed_dim = model_settings["hidden_size"], src_vocab_size = src_vocab_size,
+                        target_vocab_size = target_vocab_size, seq_length = model_settings["max_seq_length"],
+                        num_layers = model_settings["num_layers"], expansion_factor = model_settings["expansion_factor"],
+                        n_heads = model_settings["n_heads"]).to(device)
 
     for p in model.parameters():
         if p.dim() > 1:
             nn.init.xavier_uniform_(p)
 
-    #optimizer = optim.Adam(model.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
-    #criterion = nn.CrossEntropyLoss(ignore_index=0)
     use_gradient_clipping = True
 
     # Training loop
-    train(train_dataloader, val_dataloader, model, n_epochs = train_settings["epochs"], optimizer = train_settings["optimizer"], criterion = train_settings["loss_function"], use_gradient_clipping = True)
+    train(train_dataloader, val_dataloader, model, n_epochs = train_settings["epochs"], optimizer = train_settings["optimizer"], criterion = train_settings["loss_function"], use_gradient_clipping = use_gradient_clipping)
 
 if __name__ == '__main__':
     main()
