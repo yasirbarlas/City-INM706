@@ -1,10 +1,13 @@
 model:
-  attention: "bahdanau" # "bahdanau", "luong", "none"
-  hidden_dim: 128
-  max_seq_length: 4
+  attention: "none" # "bahdanau", "self", "none" (choose type of attention, or to not include attention)
+  hidden_dim: 128 # (choose number of hidden dimensions, same number is used for additional hidden layers)
+  max_seq_length: 50 # (choose maximum number of words for a sentence)
+  encoder_bidirect: False # False, True (choose bidirectional GRU for encoder)
+  num_layers: 1 # (choose number of layers of GRU)
+  layer_norm: False # False, True (choose layer normalisation)
 train:
-    epochs: 5
-    batch_size: 64
-    optimizer: "adam" # "radam", "adam"
-    loss_function: "negative-log" # "cross-entropy", "negative-log"
-    learning_rate: 0.001
+    epochs: 50 # (choose maximum number of epochs for training)
+    batch_size: 64 # (choose batch size)
+    optimizer: "adam" # "radam", "adam", "sgd" (choose optimiser)
+    loss_function: "cross-entropy" # "cross-entropy", "negative-log" (choose loss function)
+    learning_rate: 0.001 # (choose learning rate)
