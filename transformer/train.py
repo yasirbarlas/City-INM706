@@ -21,7 +21,7 @@ if torch.cuda.is_available():
 
 def train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping, plot_attention = False):
     model.train()
-    total_loss = 0.0
+    total_loss = 0
     total_bleu_score = 0
     total_nist_score = 0
 
@@ -34,13 +34,15 @@ def train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clip
 
         # Backward pass and optimization
         loss.backward()
+        
         if use_gradient_clipping:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1)
+            
         optimizer.step()
 
         total_loss += loss.item()
 
-         # Calculate BLEU score
+        # Calculate BLEU score
         bleu_score = calculate_bleu(output, target_tensor)
         total_bleu_score += bleu_score
 
@@ -52,9 +54,10 @@ def train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clip
 
 def validate_epoch(val_dataloader, model, criterion):
     model.eval()
-    total_loss = 0.0
+    total_loss = 0
     total_bleu_score = 0
     total_nist_score = 0
+    
     with torch.no_grad():
         for _, src, target_tensor in val_dataloader:
             output = model(src, target_tensor)
@@ -71,7 +74,7 @@ def validate_epoch(val_dataloader, model, criterion):
 
     return total_loss / len(val_dataloader), total_bleu_score / len(val_dataloader), total_nist_score / len(val_dataloader)
 
-def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_gradient_clipping, learning_rate = 0.0001, optimizer = "adam" ):
+def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_gradient_clipping, learning_rate = 0.0001, optimizer = "adam"):
     val_losses = [float("inf")]
     counter = 0
     
