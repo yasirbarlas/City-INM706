@@ -76,7 +76,7 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
     counter = 0
     
     if optimizer == "adam":
-        optimizer = optim.Adam(model.parameters(), lr = learning_rate, betas=(0.9, 0.98), eps = 1e-9)
+        optimizer = optim.Adam(model.parameters(), lr = learning_rate, betas = (0.9, 0.98), eps = 1e-9)
     elif optimizer == "radam":
         optimizer = optim.RAdam(model.parameters(), lr = learning_rate)
     elif optimizer == "adamW":
