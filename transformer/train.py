@@ -188,8 +188,8 @@ def main():
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size], generator = generator)
 
     # Create data loaders for each set
-    train_dataloader = DataLoader(train_dataset, batch_size=train_settings["batch_size"])
-    val_dataloader = DataLoader(val_dataset, batch_size=train_settings["batch_size"])
+    train_dataloader = DataLoader(train_dataset, batch_size = train_settings["batch_size"])
+    val_dataloader = DataLoader(val_dataset, batch_size = train_settings["batch_size"])
 
     # Create the Transformer model
     src_vocab_size = dataset.input_lang.n_words
