@@ -1,12 +1,12 @@
 model:
   hidden_dim: 128
   hidden_size: 512
-  max_seq_length: 4
+  max_seq_length: 50
   num_layers: 6
   expansion_factor: 4
   n_heads: 8
 train:
-  epochs: 5
+  epochs: 50
   batch_size: 64
   optimizer: "adam" # "adamW", "radam", "adam"
   loss_function: "cross-entropy" # "cross-entropy", "negative-log"
