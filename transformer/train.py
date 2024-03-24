@@ -83,9 +83,9 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
         optimizer = optim.AdamW(model.parameters(), lr = learning_rate, weight_decay = 1e-5)
 
     if criterion == "negative-log":
-        criterion = nn.NLLLoss()
+        criterion = nn.NLLLoss(ignore_index = 0)
     elif criterion == "cross-entropy":
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss(ignore_index = 0)
 
     for epoch in range(n_epochs):
         train_loss, train_bleu, val_bleu = train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping)
