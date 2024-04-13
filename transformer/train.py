@@ -91,14 +91,15 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
         criterion = nn.CrossEntropyLoss(ignore_index = 0)
 
     for epoch in range(n_epochs):
-        train_loss, train_bleu, val_bleu = train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping)
-        val_loss, train_nist, val_nist = validate_epoch(val_dataloader, model, criterion)
+        train_loss, train_bleu, train_nist = train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping)
+        val_loss, val_bleu, val_nist = validate_epoch(val_dataloader, model, criterion)
 
         val_losses.append(val_loss)
 
         logger.log({"train_loss": train_loss, "val_loss": val_loss})
         logger.log({"train_bleu": train_bleu, "val_bleu": val_bleu})
         logger.log({"train_nist": train_nist, "val_nist": val_nist})
+        
         print(f"Epoch: {epoch} / {n_epochs}, Train Loss {train_loss}, Validation Loss {val_loss}, Train BLEU {train_bleu}, Validation BLEU {val_bleu}, Train NIST {train_nist}, Validation NIST {val_nist}")
 
         if (val_loss + 0.001) < val_losses[epoch - 1]:
