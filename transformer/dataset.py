@@ -4,8 +4,7 @@ import torch
 import numpy as np
 import unicodedata
 import re
-import csv
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 device = torch.device("cpu")
 if torch.cuda.is_available():
@@ -37,7 +36,7 @@ class TranslationDataset(Dataset):
     SOS_token = 0
     EOS_token = 1
 
-    def __init__(self, lang1 = "en", lang2 = "fr", max_seq_len = 2, reverse = False):
+    def __init__(self, lang1 = "en", lang2 = "fr", max_seq_len = 50, reverse = False):
         self.lang1 = lang1
         self.lang2 = lang2
         self.max_seq_len = max_seq_len
@@ -48,8 +47,8 @@ class TranslationDataset(Dataset):
 
     def load_data(self, reverse = False):
         pairs = []
-        with open("fr-en/europarl-v7.fr-en.%s" % self.lang1, mode = "r", encoding = "utf-8") as en_file, open(
-                "fr-en/europarl-v7.fr-en.%s" % self.lang2, mode = "r", encoding = "utf-8") as fr_file:
+        with open("../fr-en/europarl-v7.fr-en.%s" % self.lang1, mode = "r", encoding = "utf-8") as en_file, open(
+                "../fr-en/europarl-v7.fr-en.%s" % self.lang2, mode = "r", encoding = "utf-8") as fr_file:
             en_lines = en_file.readlines()
             fr_lines = fr_file.readlines()
             for en_line, fr_line in zip(en_lines, fr_lines):

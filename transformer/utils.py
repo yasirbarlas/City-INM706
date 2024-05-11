@@ -1,6 +1,9 @@
 import torch
 import yaml
 import argparse
+import os
+import torch.nn as nn
+from torch.autograd import Variable
 
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from nltk.translate.nist_score import sentence_nist

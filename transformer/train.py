@@ -3,7 +3,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from transformer import Transformer
+from models import Transformer
 from dataset import TranslationDataset
 from logger import Logger
 
@@ -19,7 +19,7 @@ device = torch.device("cpu")
 if torch.cuda.is_available():
     device = torch.device("cuda")
 
-def train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping, plot_attention = False):
+def train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping):
     model.train()
     total_loss = 0
     total_bleu_score = 0
@@ -32,10 +32,10 @@ def train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clip
         output = model(src, target_tensor)
         loss = criterion(output.view(-1, output.size(-1)), target_tensor.view(-1))
 
-        # Backward pass and optimization
+        # Backward pass and optimisation
         loss.backward()
         
-        if use_gradient_clipping:
+        if use_gradient_clipping == True:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1)
             
         optimizer.step()
@@ -74,8 +74,8 @@ def validate_epoch(val_dataloader, model, criterion):
 
     return total_loss / len(val_dataloader), total_bleu_score / len(val_dataloader), total_nist_score / len(val_dataloader)
 
-def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_gradient_clipping, learning_rate = 0.0001, optimizer = "adam"):
-    val_losses = [float("inf")]
+def train(train_dataloader, val_dataloader, model, n_epochs, use_gradient_clipping, logger, learning_rate = 0.0001, optimizer = "adam", criterion = "cross-entropy", label_smoothing = 0):
+    val_bleus = [0]
     counter = 0
     
     if optimizer == "adam":
@@ -85,24 +85,25 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
     elif optimizer == "adamW":
         optimizer = optim.AdamW(model.parameters(), lr = learning_rate, weight_decay = 1e-5)
 
-    if criterion == "negative-log":
+    if criterion == "cross-entropy":
+        criterion = nn.CrossEntropyLoss(ignore_index = 0, label_smoothing = label_smoothing)
+    elif criterion == "negative-log":
         criterion = nn.NLLLoss(ignore_index = 0)
-    elif criterion == "cross-entropy":
-        criterion = nn.CrossEntropyLoss(ignore_index = 0)
 
-    for epoch in range(n_epochs):
+    starting_epoch = 1
+
+    for epoch in range(starting_epoch, n_epochs + 1):
         train_loss, train_bleu, train_nist = train_epoch(train_dataloader, model, optimizer, criterion, use_gradient_clipping)
         val_loss, val_bleu, val_nist = validate_epoch(val_dataloader, model, criterion)
 
-        val_losses.append(val_loss)
+        val_bleus.append(val_bleu)
 
         logger.log({"train_loss": train_loss, "val_loss": val_loss})
         logger.log({"train_bleu": train_bleu, "val_bleu": val_bleu})
         logger.log({"train_nist": train_nist, "val_nist": val_nist})
-        
         print(f"Epoch: {epoch} / {n_epochs}, Train Loss {train_loss}, Validation Loss {val_loss}, Train BLEU {train_bleu}, Validation BLEU {val_bleu}, Train NIST {train_nist}, Validation NIST {val_nist}")
 
-        if (val_loss + 0.001) < val_losses[epoch - 1]:
+        if (val_bleu + 0.0001) > val_bleus[-2]:
             # Restart patience (improvement in validation loss)
             counter = 0
 
@@ -111,7 +112,7 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
                 os.makedirs("checkpoints")
 
             # Save the model checkpoint
-            checkpoint_name = f"checkpoint_latest.pth"
+            checkpoint_name = f"checkpoint_latest.pth.tar"
             checkpoint_path = os.path.join("checkpoints", checkpoint_name)
             torch.save({
                 "epoch": epoch,
@@ -125,17 +126,17 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
                 "val_nist": val_nist,
             }, checkpoint_path)
         
-        elif (val_loss + 0.001) > val_losses[epoch - 1]:
+        elif (val_bleu + 0.0001) < val_bleus[-2]:
             # Add one to patience
             counter += 1
 
-            if val_loss < val_losses[epoch - 1]:
+            if val_bleu > val_bleus[-2]:
                 # Create checkpoint folder
                 if not os.path.exists("checkpoints"):
                     os.makedirs("checkpoints")
-
+                
                 # Save the model checkpoint
-                checkpoint_name = f"checkpoint_latest.pth"
+                checkpoint_name = f"checkpoint_latest.pth.tar"
                 checkpoint_path = os.path.join("checkpoints", checkpoint_name)
                 torch.save({
                     "epoch": epoch,
@@ -149,7 +150,7 @@ def train(train_dataloader, val_dataloader, model, n_epochs, criterion, use_grad
                     "val_nist": val_nist,
                 }, checkpoint_path)
             
-            # Patience reached, stop training (no significant improvement in validation loss after 5 epochs)
+            # Patience reached, stop training (no significant improvement in validation BLEU after 5 epochs)
             if counter >= 5:
                 break
     return
@@ -169,13 +170,14 @@ def main():
     settings = read_settings(args.config)
 
     # Access and use the settings as needed
-    model_settings = settings.get('model', {})
-    train_settings = settings.get('train', {})
+    model_settings = settings.get("model", {})
+    train_settings = settings.get("train", {})
+    logger_settings = settings.get("Logger", {})
     print(model_settings)
     print(train_settings)
 
     # Initialise 'wandb' for logging
-    wandb_logger = Logger(f"inm706_transformer", project = "inm706_cwk")
+    wandb_logger = Logger(logger_settings["logger_name"], project = logger_settings["project_name"])
     logger = wandb_logger.get_logger()
     
     # Load the dataset and create DataLoader
@@ -197,18 +199,16 @@ def main():
     target_vocab_size = dataset.output_lang.n_words
 
     model = Transformer(embed_dim = model_settings["hidden_size"], src_vocab_size = src_vocab_size,
-                        target_vocab_size = target_vocab_size, seq_length = model_settings["max_seq_length"],
+                        target_vocab_size = target_vocab_size, seq_len = model_settings["max_seq_length"],
                         num_layers = model_settings["num_layers"], expansion_factor = model_settings["expansion_factor"],
-                        n_heads = model_settings["n_heads"]).to(device)
+                        n_heads = model_settings["n_heads"], activation = model_settings["activation"], norm_first = model_settings["norm_first"], relative_attention = model_settings["relative_attention"]).to(device)
 
     for p in model.parameters():
         if p.dim() > 1:
             nn.init.xavier_uniform_(p)
 
-    use_gradient_clipping = True
-
     # Training loop
-    train(train_dataloader, val_dataloader, model, n_epochs = train_settings["epochs"], optimizer = train_settings["optimizer"], criterion = train_settings["loss_function"], use_gradient_clipping = use_gradient_clipping)
+    train(train_dataloader, val_dataloader, model, logger = logger, n_epochs = train_settings["epochs"], optimizer = train_settings["optimizer"], criterion = train_settings["loss_function"], label_smoothing = train_settings["label_smoothing"], use_gradient_clipping = train_settings["use_gradient_clipping"])
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
