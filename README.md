@@ -6,8 +6,6 @@ Note: This repository and its contents support the coursework of the INM706 modu
 
 ## Dataset
 
-## Sequence to Sequence (seq2seq)
-
-## Sequence to Sequence with Attention
+## Sequence to Sequence (Seq2Seq)
 
 ## Transformers
