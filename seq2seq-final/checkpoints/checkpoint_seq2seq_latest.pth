@@ -1,1 +1,1 @@
-"Download 'checkpoint_seq2seq_latest.pth' from baseline models and replace with this file (only if you want to perform inference on our model or to finetune/continue training)"
+"Download 'checkpoint_seq2seq_latest.pth' from improved/final models and replace with this file (only if you want to perform inference on our model or to finetune/continue training)"
