@@ -189,7 +189,7 @@ def main():
     logger = wandb_logger.get_logger()
     
     # Load the dataset and create DataLoader
-    dataset = TranslationDataset(lang1 = "en", lang2 = "fr", max_seq_len = model_settings["max_seq_length"], reverse = False)
+    dataset = TranslationDataset(lang1 = "europarl-v7.fr-en.en", lang2 = "europarl-v7.fr-en.fr", max_seq_len = model_settings["max_seq_length"], reverse = False, directory = "../fr-en/")
 
     # Define the sizes for training and validation sets
     train_size = int(0.8 * len(dataset))
