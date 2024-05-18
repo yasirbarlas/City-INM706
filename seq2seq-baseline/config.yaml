@@ -1,0 +1,26 @@
+Logger:
+  logger_name: "inm706_seq2seq_baseline"
+  project_name: "inm706_cwk"
+
+Checkpoint:
+  checkpoint: "none" # "none" if no checkpoint (start training from scratch)
+
+Model:
+  attention: "none" # "self", "none" (choose type of attention, or to not include attention)
+  hidden_dim: 128 # (choose number of hidden dimensions, same number is used for additional hidden layers)
+  max_seq_length: 50 # (choose maximum number of words for a sentence)
+  encoder_bidirect: False # False, True (choose bidirectional GRU for encoder)
+  num_layers_encoder: 1 # (choose number of layers for encoder GRU)
+  use_lstm_decoder: False # False, True (choose to use an LSTM instead of a GRU for decoder)
+  num_layers_decoder: 1 # (choose number of layers for decoder GRU/LSTM) # num_layers_decoder <= num_layers_encoder
+  layer_norm: False # False, True (choose layer normalisation for encoder)
+
+Train:
+    epochs: 50 # maximum number of epochs for training
+    batch_size: 64 # batch size
+    optimizer: "adam" # "radam", "adam", "sgd" (note: you should be using the same optimiser as your checkpoint, if using one)
+    loss_function: "negative-log" # "cross-entropy", "negative-log" (choose loss function)
+    learning_rate: 0.001 # learning rate for optimiser
+    grad_clip: "none" # gradient clipping value, "none" if no gradient clipping desired
+    teacher_forcing_ratio: "none" # teacher forcing ratio for decoder, acts as starting ratio for decay if enabled
+    linear_tf_decay: False # False, True (linear teacher forcing decay)
