@@ -1,6 +1,7 @@
 "Training/Validation Set:"
 "Download and extract the two text files (.en and .fr) and add them to this folder: https://www.statmt.org/europarl/"
 "parallel corpus French-English, 194 MB, 04/1996-11/2011"
+"Alternatively download them here: https://cityuni-my.sharepoint.com/:f:/g/personal/yasir-zubayr_barlas_city_ac_uk/EhvejfheMSdKhGURMvvLf-oBhpNXOFp2tkVRx0sx_hIfdQ?e=Dz5c4b"
 
 "Test Sets:"
-"Download and extract the test datasets from: {}"
+"Download and extract the test datasets from: https://cityuni-my.sharepoint.com/:f:/g/personal/yasir-zubayr_barlas_city_ac_uk/EhvejfheMSdKhGURMvvLf-oBhpNXOFp2tkVRx0sx_hIfdQ?e=Dz5c4b"
