@@ -1,0 +1,25 @@
+Logger:
+  logger_name: "inm706_transformer_final"
+  project_name: "inm706_cwk"
+
+Checkpoint:
+  checkpoint: "none" # "none" if no checkpoint (start training from scratch)
+
+Model:
+  hidden_size: 512 # hidden node size
+  max_seq_length: 50 # maximum sentence word length
+  num_layers: 6 # number of layers in encoder and decoder
+  expansion_factor: 4 # expansion factor
+  n_heads: 8 # number of attention heads (multi-head attention)
+  activation: "GELU" # "ReLU", "GELU"
+  norm_first: False # calculate layer norms first before attention and feedforward operations
+  relative_attention: False # include relative positional embeddings
+
+Train:
+  epochs: 50 # number of epochs to train for
+  batch_size: 64 # batch size
+  optimizer: "adam" # "adamW", "radam", "adam" (note: you should be using the same optimiser as your checkpoint, if using one)
+  loss_function: "cross-entropy" # "cross-entropy", "negative-log" (choose loss function)
+  label_smoothing: 0.1 # 0 for no label-smoothing
+  learning_rate: 0.001 # learning rate for optimiser
+  use_gradient_clipping: False # use gradient clipping or not
