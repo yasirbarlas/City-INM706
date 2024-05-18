@@ -1,2 +1,6 @@
-"Download and extract the two text files (.en and .fr) and add them to this folder: https://www.statmt.org/europarl/
+"Training/Validation Set:"
+"Download and extract the two text files (.en and .fr) and add them to this folder: https://www.statmt.org/europarl/"
 "parallel corpus French-English, 194 MB, 04/1996-11/2011"
+
+"Test Sets:"
+"Download and extract the test datasets from: {}"
