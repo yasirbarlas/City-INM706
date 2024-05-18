@@ -31,14 +31,14 @@ class Lang:
         else:
             self.word2count[word] += 1
 
-
 class TranslationDataset(Dataset):
     SOS_token = 0
     EOS_token = 1
 
-    def __init__(self, lang1 = "en", lang2 = "fr", max_seq_len = 50, reverse = False):
+    def __init__(self, lang1 = "europarl-v7.fr-en.en", lang2 = "europarl-v7.fr-en.fr", max_seq_len = 50, reverse = False, directory = "../fr-en/"):
         self.lang1 = lang1
         self.lang2 = lang2
+        self.directory = directory
         self.max_seq_len = max_seq_len
         self.input_lang, self.output_lang, self.pairs = self.prepare_data(reverse)
 
@@ -47,8 +47,8 @@ class TranslationDataset(Dataset):
 
     def load_data(self, reverse = False):
         pairs = []
-        with open("../fr-en/europarl-v7.fr-en.%s" % self.lang1, mode = "r", encoding = "utf-8") as en_file, open(
-                "../fr-en/europarl-v7.fr-en.%s" % self.lang2, mode = "r", encoding = "utf-8") as fr_file:
+        with open(f"{self.directory}{self.lang1}", mode = "r", encoding = "utf-8") as en_file, open(
+                f"{self.directory}{self.lang2}", mode = "r", encoding = "utf-8") as fr_file:
             en_lines = en_file.readlines()
             fr_lines = fr_file.readlines()
             for en_line, fr_line in zip(en_lines, fr_lines):
