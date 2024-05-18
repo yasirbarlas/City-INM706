@@ -1,5 +1,5 @@
 Logger:
-  logger_name: "inm706_seq2seq_baseline"
+  logger_name: "inm706_seq2seq_final"
   project_name: "inm706_cwk"
 
 Checkpoint:
