@@ -4,6 +4,8 @@ Note: This repository and its contents support the coursework of the INM706 modu
 
 ## Background
 
+We use sequence-to-sequence (Seq2Seq) and transformer models for machine translation on an English to French dataset.
+
 ## Datasets
 
 We use the 'Europarl v7' dataset for training/validation, which was the standard for training models in WMT 2015. The dataset is extracted from proceedings of the European Parliament, with translations in many languages. The dataset can be found [here](https://www.statmt.org/europarl/). Our test datasets can be found [here](https://www.statmt.org/wmt09/translation-task.html).
