@@ -15,10 +15,10 @@ We have also uploaded the datasets we used ourselves, which may be easier to dow
 ### Requirements
 - Python 3.9+
 - [PyTorch (with CUDA for GPU usage)](https://pytorch.org/get-started/locally/)
-- All other requirements listed in [**requirements.txt**]()
+- All other requirements listed in [**requirements.txt**](blob/main/requirements.txt)
 
 ### Checkpoints
-Our checkpoints can be downloaded [here](). Each folder contains a 'readme.txt' file containing the hyperparameters used to train the models. You will need these if you edit the code later, otherwise we have already filled them in appropriately for you. You only need to replace the dummy checkpoints in this repository with those found [here]().
+Our checkpoints can be downloaded [here](https://cityuni-my.sharepoint.com/:f:/g/personal/yasir-zubayr_barlas_city_ac_uk/EuqShgL4qCNLq6IhTXPTM7QBM-_HcyvVtQNR-jPBJavyYA?e=HnwuQF). Each folder contains a 'readme.txt' file containing the hyperparameters used to train the models. You will need these if you edit the code later, otherwise we have already filled them in appropriately for you. You only need to replace the dummy checkpoints in this repository with those found [here](https://cityuni-my.sharepoint.com/:f:/g/personal/yasir-zubayr_barlas_city_ac_uk/EuqShgL4qCNLq6IhTXPTM7QBM-_HcyvVtQNR-jPBJavyYA?e=HnwuQF).
 
 ### File Structure
 - `train.py`: File to initiate the training loop for the respective model, which uses the hyperparameters in the `config.yaml` file.
