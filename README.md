@@ -1,4 +1,4 @@
-# INM706: Deep Learning for Sequence Analysis
+# Neural Machine Translation using Sequence-to-Sequence and Transformer Models
 
 Note: This repository and its contents support the coursework of the INM706 module at City, University of London.
 
